@@ -1,0 +1,122 @@
+export type RiskLevel = "ปกติ" | "เฝ้าระวัง" | "เตือนระบาด" | "ไม่มีข้อมูล";
+
+export interface ForecastRow {
+  province: string;
+  year: number;
+  target_week_start: string;
+  target: number | null;
+  cases_now: number | null;
+  cases_roll4: number | null;
+  pred: number;
+  thr_watch: number;
+  thr_alert: number;
+  level: RiskLevel;
+}
+
+export interface WeatherRow {
+  province: string;
+  date: string;
+  temperature_2m_mean: number | null;
+  temperature_2m_max: number | null;
+  temperature_2m_min: number | null;
+  precipitation_sum: number | null;
+  precipitation_hours: number | null;
+  humidity_mean: number | null;
+  humidity_min: number | null;
+}
+
+export interface PreventionAction {
+  level: string;
+  priority: number;
+  action: string;
+  frequency: string;
+  target_group: string;
+  source: string;
+}
+
+export interface QuestionRow {
+  section_id: string;
+  section_title: string;
+  section_order: number;
+  question_order: number;
+  field_key: string;
+  question_th: string;
+  input_type: "radio" | "select" | "checkbox" | "text";
+  options_key: string;
+  required: string;
+  placeholder: string;
+  help_text: string;
+}
+
+export interface OptionRow {
+  options_key: string;
+  option_value: string;
+  option_label: string;
+  display_order: number;
+}
+
+export interface RecommendationRow {
+  group_code: string;
+  result_code: string;
+  title_th: string;
+  message_th: string;
+  action_th: string;
+}
+
+export interface RuleRow {
+  rule_id: string;
+  domain: string;
+  condition_code: string;
+  logic_summary_th: string;
+  output_code: string;
+  priority: number;
+  reference_url: string;
+  clinical_note_th: string;
+}
+
+export interface ModelMeta {
+  test_year: number;
+  horizon_weeks: number;
+  metrics: Record<string, { MAE: number; RMSE: number }>;
+  alert: { n_real: number; recall: number; precision: number };
+}
+
+export interface GeoFeature {
+  type: string;
+  properties: Record<string, any>;
+  geometry: any;
+}
+
+export interface GeoJsonData {
+  type: "FeatureCollection";
+  features: GeoFeature[];
+}
+
+export interface DengueData {
+  predictions: ForecastRow[];
+  weather: WeatherRow[];
+  preventionActions: PreventionAction[];
+  questions: QuestionRow[];
+  options: OptionRow[];
+  rules: RuleRow[];
+  recommendations: RecommendationRow[];
+  meta: ModelMeta;
+  thailandGeo: GeoJsonData;
+  odpcGeo: GeoJsonData;
+}
+
+export interface RegionalSummary {
+  week: string;
+  totalPredicted: number;
+  alertCount: number;
+  watchCount: number;
+  normalCount: number;
+  rainfallAverage: number | null;
+  temperatureAverage: number | null;
+  weatherProvinceCount: number;
+  weatherDays: number;
+  trend: "เพิ่มขึ้น" | "ลดลง" | "ค่อนข้างคงที่" | "ไม่มีข้อมูลเปรียบเทียบ";
+  trendDelta: number | null;
+  trendPercent: number | null;
+  previousTotal: number | null;
+}

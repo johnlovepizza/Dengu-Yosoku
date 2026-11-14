@@ -1,0 +1,23 @@
+{
+  "test_year": 2022,
+  "horizon_weeks": 2,
+  "metrics": {
+    "AI (โมเดลสุดท้าย)": {
+      "MAE": 1.812,
+      "RMSE": 3.597
+    },
+    "Baseline สัปดาห์นี้": {
+      "MAE": 1.93,
+      "RMSE": 3.91
+    },
+    "Baseline เฉลี่ย 4 สัปดาห์": {
+      "MAE": 1.807,
+      "RMSE": 3.571
+    }
+  },
+  "alert": {
+    "n_real": 37,
+    "recall": 0.73,
+    "precision": 0.931
+  }
+}
