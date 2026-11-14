@@ -1,0 +1,22 @@
+﻿options_key,option_value,option_label,display_order
+fever_status,fever_now,มีไข้ในขณะนี้,1
+fever_status,fever_reduced,ไข้ลดลงหรือหายแล้วภายใน 48 ชั่วโมงที่ผ่านมา,2
+fever_status,no_fever_7d,ไม่มีไข้ในช่วง 7 วันที่ผ่านมา,3
+illness_onset,day1,วันนี้ (วันที่ 1),1
+illness_onset,day2_3,2–3 วันที่ผ่านมา,2
+illness_onset,day4_5,4–5 วันที่ผ่านมา,3
+illness_onset,day6_7,6–7 วันที่ผ่านมา,4
+illness_onset,over7,มากกว่า 7 วันที่ผ่านมา,5
+illness_onset,unknown,ไม่แน่ใจ,6
+lab_timing,day1_3,วันที่ 1–3 หลังเริ่มป่วย,1
+lab_timing,day4_7,วันที่ 4–7 หลังเริ่มป่วย,2
+lab_timing,after7,หลังวันที่ 7,3
+lab_timing,unknown,ไม่ทราบ,4
+test_result,not_tested,ไม่ได้ตรวจ / ไม่ทราบ,1
+test_result,positive,Positive,2
+test_result,negative,Negative,3
+test_result,indeterminate,Indeterminate / ไม่ชัดเจน,4
+ns1_method,elisa,ELISA,1
+ns1_method,rdt,Rapid Diagnostic Test (RDT),2
+ns1_method,other,วิธีอื่น,3
+ns1_method,unknown,ไม่ทราบวิธีตรวจ,4

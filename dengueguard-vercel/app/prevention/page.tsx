@@ -1,0 +1,104 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { AlertTriangle, Info, ShieldCheck, Wind } from "lucide-react";
+import { useDengueData } from "@/components/DataProvider";
+import { compareProvinceWeek, formatCases, formatNumber, getCurrentRows, getRegionalSummary, getUniqueYears, getWeeksForYear } from "@/lib/utils";
+
+function RiskPill({ level }: { level: string }) {
+  const cls = level === "เตือนระบาด" ? "risk-high" : level === "เฝ้าระวัง" ? "risk-watch" : "risk-normal";
+  return <span className={`risk-pill ${cls}`}><span />{level}</span>;
+}
+
+export default function PreventionPage() {
+  const { data } = useDengueData();
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const years = useMemo(() => data ? getUniqueYears(data.predictions) : [], [data]);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const year = selectedYear ?? years.at(-1) ?? 2022;
+  const weeks = useMemo(() => data ? getWeeksForYear(data.predictions, year) : [], [data, year]);
+  const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
+  const week = selectedWeek && weeks.includes(selectedWeek) ? selectedWeek : weeks.at(-1) ?? "";
+
+  if (!data) return null;
+
+  const currentRows = getCurrentRows(data.predictions, week);
+  const provinceOptions = [...new Set(currentRows.map((row) => row.province))].sort((a, b) => a.localeCompare(b, "th"));
+  const province = provinceOptions.includes(selectedProvince) ? selectedProvince : provinceOptions[0] ?? "";
+  const regional = getRegionalSummary(data.predictions, data.weather, week);
+  const selected = currentRows.find((row) => row.province === province);
+  const comparison = province ? compareProvinceWeek(data.predictions, province, week) : { current: undefined, previous: undefined, delta: null, percent: null };
+  const actions = selected ? data.preventionActions.filter((item) => item.level === selected.level).sort((a, b) => a.priority - b.priority) : [];
+  const alerts = [...currentRows].sort((a, b) => b.pred - a.pred);
+
+  return (
+    <div className="page-stack">
+      <section className="page-heading-row">
+        <div><div className="eyebrow">PROACTIVE DISEASE PREVENTION</div><h1>ป้องกันโรคเชิงรุกและแจ้งเตือนล่วงหน้า</h1><p>ใช้ผลพยากรณ์รายจังหวัดเพื่อสนับสนุนการเฝ้าระวังและการป้องกันก่อนเกิดการระบาด</p></div>
+        <div className="heading-icon-card"><ShieldCheck size={26} /><span>PREVENTION</span></div>
+      </section>
+
+      <div className="historical-notice"><Info size={17} /><span>ข้อมูลพยากรณ์ในชุดที่แนบเป็นข้อมูลย้อนหลังถึง 25 ธันวาคม 2022 ส่วนข้อมูลอากาศเป็นข้อมูลตรวจวัดย้อนหลัง ไม่ใช่พยากรณ์อากาศปัจจุบัน</span></div>
+
+      <section className="filter-panel compact-filters">
+        <div className="filter-title"><Wind size={17} /><strong>ช่วงเวลาที่ต้องการติดตาม</strong></div>
+        <label className="field-control"><span>ปี</span><select value={year} onChange={(event) => { setSelectedYear(Number(event.target.value)); setSelectedWeek(null); }}>
+          {years.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select></label>
+        <label className="field-control"><span>สัปดาห์เป้าหมาย</span><select value={week} onChange={(event) => setSelectedWeek(event.target.value)}>
+          {weeks.map((item) => <option key={item} value={item}>{new Date(`${item}T00:00:00`).toLocaleDateString("th-TH")}</option>)}
+        </select></label>
+      </section>
+
+      <section className="panel region-overview-panel">
+        <div className="panel-heading"><div><h2>ภาพรวมการเฝ้าระวังในพื้นที่ สคร.4</h2><p>สถานะจังหวัดทั้ง 8 แห่งตามสัปดาห์เป้าหมายที่เลือก</p></div></div>
+        <div className="metric-grid metric-grid-three">
+          <article className="metric-card"><div className="metric-card-top"><span>จังหวัดระดับเตือนระบาด</span><span className="metric-icon red">!</span></div><strong>{regional.alertCount} จังหวัด</strong><small>ต้องติดตามใกล้ชิดตามเกณฑ์โมเดล</small></article>
+          <article className="metric-card"><div className="metric-card-top"><span>จังหวัดระดับเฝ้าระวัง</span><span className="metric-icon amber">◉</span></div><strong>{regional.watchCount} จังหวัด</strong><small>ควรเพิ่มการป้องกันและติดตาม</small></article>
+          <article className="metric-card"><div className="metric-card-top"><span>จังหวัดระดับปกติ</span><span className="metric-icon green">✓</span></div><strong>{regional.normalCount} จังหวัด</strong><small>คงมาตรการป้องกันต่อเนื่อง</small></article>
+        </div>
+        <div className="alert-list-row">
+          {alerts.filter((row) => row.level !== "ปกติ").length ? alerts.filter((row) => row.level !== "ปกติ").map((row) => <div className="alert-list-item" key={row.province}><div><strong>{row.province}</strong><span>{formatCases(row.pred)} · เกณฑ์เฝ้าระวัง {formatNumber(row.thr_watch)} ราย · เกณฑ์เตือน {formatNumber(row.thr_alert)} ราย</span></div><RiskPill level={row.level} /></div>) : <div className="empty-alert"><ShieldCheck size={19} /> ยังไม่มีจังหวัดที่อยู่ในระดับเฝ้าระวังหรือเตือนระบาดตามเกณฑ์พยากรณ์ในสัปดาห์นี้</div>}
+        </div>
+      </section>
+
+      <section className="content-grid prevention-detail-grid">
+        <article className="panel province-alert-panel">
+          <div className="panel-heading"><div><h2>การแจ้งเตือนรายจังหวัด</h2><p>เลือกจังหวัดเพื่อดูเหตุผลและเกณฑ์พยากรณ์</p></div></div>
+          <label className="field-control full-field"><span>จังหวัด</span><select value={province} onChange={(event) => setSelectedProvince(event.target.value)}>
+            {provinceOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select></label>
+          {selected && <>
+            <div className={`province-status-banner ${selected.level === "เตือนระบาด" ? "banner-danger" : selected.level === "เฝ้าระวัง" ? "banner-warning" : "banner-normal"}`}>
+              <div><span>จังหวัด{province}</span><strong>{selected.level}</strong></div>
+              <p>{selected.level === "เตือนระบาด" ? "ค่าพยากรณ์อยู่ในระดับเตือนระบาดตามเกณฑ์ของโมเดล ควรประสานการเฝ้าระวังในพื้นที่" : selected.level === "เฝ้าระวัง" ? "ค่าพยากรณ์อยู่ในระดับเฝ้าระวัง ควรเพิ่มความเข้มข้นของการป้องกัน" : "ค่าพยากรณ์ยังไม่ถึงเกณฑ์เฝ้าระวัง แต่ควรดำเนินมาตรการป้องกันยุงลายต่อเนื่อง"}</p>
+            </div>
+            <div className="metric-grid metric-grid-three threshold-grid">
+              <article className="mini-metric"><span>เกณฑ์เฝ้าระวัง</span><strong>{formatCases(selected.thr_watch)}</strong></article>
+              <article className="mini-metric"><span>เกณฑ์เตือนระบาด</span><strong>{formatCases(selected.thr_alert)}</strong></article>
+              <article className="mini-metric"><span>เปรียบเทียบกับสัปดาห์เป้าหมายก่อนหน้า</span><strong>{comparison.previous ? formatCases(comparison.previous.pred) : "ไม่มีข้อมูล"}</strong><small>{comparison.delta === null ? "" : `${comparison.delta > 0 ? "+" : ""}${formatNumber(comparison.delta)} ราย (${comparison.percent === null ? "ไม่มีฐานคำนวณ %" : `${comparison.percent > 0 ? "+" : ""}${comparison.percent.toFixed(1)}%`})`}</small></article>
+            </div>
+            <div className="forecast-current-value"><span>ค่าพยากรณ์สัปดาห์ที่เลือก</span><strong>{formatCases(selected.pred)}</strong></div>
+          </>}
+        </article>
+
+        <article className="panel regional-weather-panel">
+          <div className="panel-heading"><div><h2>ข้อมูลสภาพอากาศประกอบ</h2><p>ภาพรวม 8 จังหวัด · 7 วันของสัปดาห์เป้าหมาย</p></div><Wind size={19} /></div>
+          <div className="weather-large-metrics">
+            <div><span>ปริมาณฝนเฉลี่ยสะสม</span><strong>{regional.rainfallAverage === null ? "ไม่มีข้อมูล" : `${formatNumber(regional.rainfallAverage)} มม.`}</strong></div>
+            <div><span>อุณหภูมิเฉลี่ย</span><strong>{regional.temperatureAverage === null ? "ไม่มีข้อมูล" : `${formatNumber(regional.temperatureAverage)} °C`}</strong></div>
+          </div>
+          <div className="panel-note">มีข้อมูลสภาพอากาศ {regional.weatherProvinceCount} จาก 8 จังหวัด · ข้อมูลตรวจวัดย้อนหลัง ไม่ใช่ค่าพยากรณ์อากาศในอนาคต</div>
+          <div className="trend-summary"><span>แนวโน้มผู้ป่วยรวมทั้งเขต</span><strong>{regional.trend}</strong><small>{regional.trendDelta === null ? "ไม่มีสัปดาห์ก่อนหน้าให้เปรียบเทียบ" : `${regional.trendDelta > 0 ? "+" : ""}${formatNumber(regional.trendDelta)} ราย (${regional.trendPercent === null ? "คำนวณเปอร์เซ็นต์ไม่ได้" : `${regional.trendPercent > 0 ? "+" : ""}${regional.trendPercent.toFixed(1)}%`})`}</small></div>
+        </article>
+      </section>
+
+      <section className="panel actions-panel">
+        <div className="panel-heading"><div><h2>คำแนะนำในการป้องกัน</h2><p>{province ? `แนวทางสำหรับจังหวัด${province} ตามระดับ ${selected?.level ?? "ไม่มีข้อมูล"}` : "แนวทางป้องกันตามระดับความเสี่ยง"}</p></div><ShieldCheck size={20} /></div>
+        {actions.length ? <div className="action-list">{actions.map((item, index) => <article className="action-item" key={`${item.level}-${item.priority}-${index}`}><div className="action-number">{index + 1}</div><div className="action-copy"><strong>{item.action}</strong><p>{item.frequency}</p><small>กลุ่มเป้าหมาย: {item.target_group} · แหล่งข้อมูล: {item.source}</small></div></article>)}</div> : <p className="muted">ไม่พบคำแนะนำสำหรับระดับนี้</p>}
+        <div className="clinical-reminder"><AlertTriangle size={17} /><span>หากประชาชนมีไข้หรืออาการผิดปกติ ควรรับการประเมินจากบุคลากรทางการแพทย์ ไม่ควรรอการแจ้งเตือนจากระบบ</span></div>
+      </section>
+      <p className="disclaimer-line"><Info size={15} /> ระบบนี้เป็นการแจ้งเตือนภายในเว็บไซต์ ไม่ได้ส่ง LINE, Email หรือ SMS และระดับพยากรณ์ไม่ใช่การยืนยันว่ามีการระบาดจริง</p>
+    </div>
+  );
+}
